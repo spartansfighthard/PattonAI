@@ -3,21 +3,29 @@ import json
 import os
 from openai import OpenAI
 
-def handler(request):
-    if request.method == "OPTIONS":
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "POST, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type",
-            }
+def handle_cors(response):
+    response.update({
+        "headers": {
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET,OPTIONS,PATCH,DELETE,POST,PUT",
+            "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
         }
+    })
+    return response
+
+def handler(request):
+    # Handle CORS preflight request
+    if request.method == "OPTIONS":
+        return handle_cors({
+            "statusCode": 200,
+            "body": ""
+        })
 
     try:
         # Parse request body
-        request_body = json.loads(request.body)
-        message = request_body.get('message', '')
+        body = json.loads(request.body.decode())
+        message = body.get('message', '')
 
         # Initialize OpenAI client
         client = OpenAI(
@@ -40,27 +48,20 @@ def handler(request):
             ]
         )
 
-        # Return response
-        return {
+        # Return success response
+        return handle_cors({
             "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
             "body": json.dumps({
                 "response": completion.choices[0].message.content
             })
-        }
+        })
 
     except Exception as e:
-        print(f"Error: {str(e)}")  # Log error for debugging
-        return {
+        print(f"Error: {str(e)}")  # For Vercel logs
+        # Return error response
+        return handle_cors({
             "statusCode": 500,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
             "body": json.dumps({
                 "error": str(e)
             })
-        }
+        })
