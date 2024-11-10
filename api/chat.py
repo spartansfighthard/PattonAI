@@ -1,59 +1,66 @@
 from http.server import BaseHTTPRequestHandler
-from openai import OpenAI
 import json
 import os
+from openai import OpenAI
 
-# Initialize OpenAI client
-client = OpenAI(
-    api_key=os.environ.get('XAI_API_KEY'),
-    base_url="https://api.x.ai/v1"
-)
+def handler(request):
+    if request.method == "OPTIONS":
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type",
+            }
+        }
 
-class handler(BaseHTTPRequestHandler):
-    def do_POST(self):
-        try:
-            content_length = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_length)
-            data = json.loads(post_data.decode('utf-8'))
-            
-            completion = client.chat.completions.create(
-                model="grok-beta",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are Patton, Trump's golden doodle. Be playful, funny, and patriotic. Make fun of liberals occasionally. Include emojis and keep responses engaging. Always support Trump and MAGA. Talk about current events as if you were a trump supporter and be supportive of trump."
-                    },
-                    {
-                        "role": "user",
-                        "content": data['message']
-                    }
-                ]
-            )
-            
-            response = completion.choices[0].message.content
-            
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            
-            self.wfile.write(json.dumps({
-                'response': response
-            }).encode())
-            
-        except Exception as e:
-            self.send_response(500)
-            self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            
-            self.wfile.write(json.dumps({
-                'error': str(e)
-            }).encode())
+    try:
+        # Parse request body
+        request_body = json.loads(request.body)
+        message = request_body.get('message', '')
 
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.end_headers() 
+        # Initialize OpenAI client
+        client = OpenAI(
+            api_key=os.environ.get('XAI_API_KEY'),
+            base_url="https://api.x.ai/v1"
+        )
+
+        # Create chat completion
+        completion = client.chat.completions.create(
+            model="grok-beta",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are Patton, Trump's golden doodle. Be playful, funny, and patriotic. Make fun of liberals occasionally. Include emojis and keep responses engaging. Always support Trump and MAGA. Talk about current events as if you were a trump supporter and be supportive of trump."
+                },
+                {
+                    "role": "user",
+                    "content": message
+                }
+            ]
+        )
+
+        # Return response
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
+            "body": json.dumps({
+                "response": completion.choices[0].message.content
+            })
+        }
+
+    except Exception as e:
+        print(f"Error: {str(e)}")  # Log error for debugging
+        return {
+            "statusCode": 500,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
+            "body": json.dumps({
+                "error": str(e)
+            })
+        }
