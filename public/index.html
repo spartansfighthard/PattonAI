@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patton - Trump's MAGA Dog</title>
+    <style>
+        :root {
+            --maga-red: #E0162B;
+            --terminal-bg: #1a1a1a;
+            --terminal-text: #00ff00;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: white;
+        }
+
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                        url('./patton1.jpg');
+            background-size: cover;
+            background-position: center;
+            padding: 100px 20px;
+            text-align: center;
+        }
+
+        .terminal {
+            background: var(--terminal-bg);
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+
+        .terminal-output {
+            color: var(--terminal-text);
+            white-space: pre-wrap;
+            height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .terminal-input {
+            background: transparent;
+            border: none;
+            color: var(--terminal-text);
+            width: 100%;
+            padding: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .terminal-input::before {
+            content: '> ';
+            color: var(--terminal-text);
+        }
+
+        .prompt {
+            color: var(--terminal-text);
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .info-section {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .links a {
+            color: var(--maga-red);
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 2px solid var(--maga-red);
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .links a:hover {
+            background: var(--maga-red);
+            color: white;
+        }
+
+        .token-info {
+            background: #111;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+            padding: 0 20px;
+        }
+
+        .gallery-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .gallery-image:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+
+        .featured-image {
+            grid-column: 1 / -1;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .links {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .links a {
+                width: 200px;
+                text-align: center;
+            }
+
+            .image-gallery {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>🐾 PATTON 🇺🇸</h1>
+        <h2>Trump's AI-Powered MAGA Dog</h2>
+        <div class="links">
+            <a href="https://x.com/PattonTrumpSol" target="_blank">Twitter</a>
+            <a href="https://t.me/PattonTrumpAI" target="_blank">Telegram</a>
+            <a href="https://t.me/PattonDogMemes" target="_blank">Memes</a>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <div class="image-gallery">
+            <img src="./Patton!.jpg" alt="Patton Featured" class="gallery-image featured-image">
+            <img src="./photo_2024-11-07_23-04-58.jpg" alt="Patton" class="gallery-image">
+            <img src="./photo_2024-11-07_22-53-39.jpg" alt="Patton MAGA" class="gallery-image">
+            <img src="./photo_2024-11-07_22-50-53.jpg" alt="Patton Trump" class="gallery-image">
+            <img src="./patton1.jpg" alt="Patton" class="gallery-image">
+        </div>
+
+        <div class="token-info">
+            <h3>$PATTON Token</h3>
+            <p>Contract: Y8BpHwRoqH6xLXRUY52984cWpeLrZSqSdbDfsAaMAGA</p>
+            <p>Network: Solana</p>
+        </div>
+
+        <div class="terminal">
+            <div class="terminal-output" id="output"></div>
+            <div style="display: flex; align-items: center;">
+                <span class="prompt">&gt;</span>
+                <input type="text" class="terminal-input" id="input" placeholder="Type 'help' for commands..." autocomplete="off" />
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const terminal = {
+            output: document.getElementById('output'),
+            input: document.getElementById('input'),
+            
+            async callPattonAI(message) {
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                    return data.response;
+                } catch (error) {
+                    console.error('Chat error:', error);
+                    return "Woof! Something went wrong with my AI brain! Try again later! 🐾";
+                }
+            },
+
+            commands: {
+                help: () => `Available commands:
+- help: Show this message
+- about: Learn about Patton
+- socials: Get social media links
+- token: Get token information
+- memes: Latest memes
+- clear: Clear terminal`,
+                
+                about: () => `🐾 I'm Patton, Trump's AI-powered golden doodle!
+- First Dog of the MAGA Movement
+- Powered by Advanced AI
+- Creating the dankest MAGA memes
+- Making liberals cry since 2024`,
+                
+                socials: () => `🌐 Follow the Pack:
+- Twitter: @PattonTrumpSol
+- Telegram: t.me/PattonTrumpAI
+- Memes: t.me/PattonDogMemes
+- Chat: @PattonAI_bot`,
+                
+                token: () => `💰 $PATTON Token Info:
+- Contract: Y8BpHwRoqH6xLXRUY52984cWpeLrZSqSdbDfsAaMAGA
+- Network: Solana
+- Total Supply: 1,000,000,000
+- Tax: 0/0
+- LP Locked
+- Contract Renounced`,
+                
+                memes: () => `🎭 Check out my latest memes:
+- Twitter: @PattonDogMemes
+- Telegram: t.me/PattonDogMemes`,
+                
+                clear: () => {
+                    terminal.output.innerHTML = '';
+                    return '';
+                }
+            },
+
+            async processCommand(cmd) {
+                const trimmedCmd = cmd.toLowerCase().trim();
+                
+                // Check if it's a built-in command
+                if (this.commands[trimmedCmd]) {
+                    const response = this.commands[trimmedCmd]();
+                    this.output.innerHTML += `> ${cmd}\n${response}\n\n`;
+                } else {
+                    // Handle as chat message
+                    this.output.innerHTML += `> ${cmd}\n...thinking...\n`;
+                    const response = await this.callPattonAI(cmd);
+                    this.output.innerHTML += `${response}\n\n`;
+                }
+                
+                this.output.scrollTop = this.output.scrollHeight;
+            },
+
+            init() {
+                this.input.addEventListener('keydown', async (e) => {
+                    if (e.key === 'Enter') {
+                        const cmd = this.input.value;
+                        this.input.value = '';
+                        if (cmd.trim()) {
+                            await this.processCommand(cmd);
+                        }
+                    }
+                });
+
+                // Welcome message
+                this.output.innerHTML = `Welcome to Patton's Terminal! 🐾
+Type 'help' for commands or just chat with me!\n\n`;
+                
+                this.input.focus();
+
+                document.querySelector('.terminal').addEventListener('click', () => {
+                    this.input.focus();
+                });
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            terminal.init();
+        });
+    </script>
+</body>
+</html> 
