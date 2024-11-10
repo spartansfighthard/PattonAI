@@ -2,55 +2,41 @@ from http.server import BaseHTTPRequestHandler
 import json
 import os
 from openai import OpenAI
-import sys
 
-def handler(request):
-    print("Handler started")  # Debug log
+class handler(BaseHTTPRequestHandler):
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
 
-    headers = {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Content-Type": "application/json"
-    }
-
-    # Handle preflight request
-    if request.method == "OPTIONS":
-        return {
-            "statusCode": 200,
-            "headers": headers,
-            "body": ""
-        }
-
-    try:
-        # Check for API key
-        api_key = os.environ.get('XAI_API_KEY')
-        if not api_key:
-            raise ValueError("XAI_API_KEY not found in environment variables")
-
-        # Parse request body
+    def do_POST(self):
         try:
-            body = json.loads(request.body.decode())
-            message = body.get('message')
-            if not message:
-                raise ValueError("No message provided in request")
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON in request body: {str(e)}")
+            # Read request body
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8')
+            data = json.loads(body)
+            message = data.get('message')
 
-        # Initialize OpenAI client
-        client = OpenAI(
-            api_key=api_key,
-            base_url="https://api.x.ai/v1"
-        )
+            # Check API key
+            api_key = os.environ.get('XAI_API_KEY')
+            if not api_key:
+                raise Exception("API key not found")
 
-        # Create chat completion
-        try:
+            # Initialize client
+            client = OpenAI(
+                api_key=api_key,
+                base_url="https://api.x.ai/v1"
+            )
+
+            # Create chat completion
             completion = client.chat.completions.create(
                 model="grok-beta",
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are Patton, Trump's golden doodle. Be playful, funny, and patriotic. Make fun of liberals occasionally. Include emojis and keep responses engaging. Always support Trump and MAGA. Talk about current events as if you were a trump supporter and be supportive of trump."
+                        "content": "You are Patton, Trump's golden doodle. Be playful, funny, and patriotic."
                     },
                     {
                         "role": "user",
@@ -58,25 +44,26 @@ def handler(request):
                     }
                 ]
             )
-            response = completion.choices[0].message.content
+
+            # Send response
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            
+            response = {
+                "response": completion.choices[0].message.content
+            }
+            self.wfile.write(json.dumps(response).encode())
+
         except Exception as e:
-            raise ValueError(f"Error calling xAI API: {str(e)}")
-
-        # Return success response
-        return {
-            "statusCode": 200,
-            "headers": headers,
-            "body": json.dumps({
-                "response": response
-            })
-        }
-
-    except Exception as e:
-        print(f"Error in handler: {str(e)}")  # This will show in Vercel logs
-        return {
-            "statusCode": 500,
-            "headers": headers,
-            "body": json.dumps({
-                "error": f"Server error: {str(e)}"
-            })
-        }
+            print(f"Error: {str(e)}")  # This will show in Vercel logs
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            
+            error_response = {
+                "error": str(e)
+            }
+            self.wfile.write(json.dumps(error_response).encode())

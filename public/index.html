@@ -192,6 +192,8 @@
             
             async callPattonAI(message) {
                 try {
+                    console.log("Sending message:", message);  // Debug log
+                    
                     const response = await fetch('/api/chat', {
                         method: 'POST',
                         headers: {
@@ -200,16 +202,22 @@
                         body: JSON.stringify({ message })
                     });
                     
+                    console.log("Response status:", response.status);  // Debug log
+                    
+                    const text = await response.text();
+                    console.log("Response text:", text);  // Debug log
+                    
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${text}`);
                     }
                     
-                    const data = await response.json();
+                    const data = JSON.parse(text);
                     if (data.error) throw new Error(data.error);
                     return data.response;
+                    
                 } catch (error) {
                     console.error('Chat error:', error);
-                    return "Woof! Something went wrong with my AI brain! Try again later! 🐾";
+                    return `Woof! Something went wrong: ${error.message}`;
                 }
             },
 
