@@ -2,9 +2,11 @@ from http.server import BaseHTTPRequestHandler
 import json
 import os
 from openai import OpenAI
+import sys
 
 def handler(request):
-    # Add CORS headers
+    print("Handler started")  # Debug log
+
     headers = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
