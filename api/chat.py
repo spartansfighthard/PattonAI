@@ -3,65 +3,78 @@ import json
 import os
 from openai import OpenAI
 
-def handle_cors(response):
-    response.update({
-        "headers": {
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET,OPTIONS,PATCH,DELETE,POST,PUT",
-            "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
-        }
-    })
-    return response
-
 def handler(request):
-    # Handle CORS preflight request
+    # Add CORS headers
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Content-Type": "application/json"
+    }
+
+    # Handle preflight request
     if request.method == "OPTIONS":
-        return handle_cors({
+        return {
             "statusCode": 200,
+            "headers": headers,
             "body": ""
-        })
+        }
 
     try:
+        # Check for API key
+        api_key = os.environ.get('XAI_API_KEY')
+        if not api_key:
+            raise ValueError("XAI_API_KEY not found in environment variables")
+
         # Parse request body
-        body = json.loads(request.body.decode())
-        message = body.get('message', '')
+        try:
+            body = json.loads(request.body.decode())
+            message = body.get('message')
+            if not message:
+                raise ValueError("No message provided in request")
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in request body: {str(e)}")
 
         # Initialize OpenAI client
         client = OpenAI(
-            api_key=os.environ.get('XAI_API_KEY'),
+            api_key=api_key,
             base_url="https://api.x.ai/v1"
         )
 
         # Create chat completion
-        completion = client.chat.completions.create(
-            model="grok-beta",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are Patton, Trump's golden doodle. Be playful, funny, and patriotic. Make fun of liberals occasionally. Include emojis and keep responses engaging. Always support Trump and MAGA. Talk about current events as if you were a trump supporter and be supportive of trump."
-                },
-                {
-                    "role": "user",
-                    "content": message
-                }
-            ]
-        )
+        try:
+            completion = client.chat.completions.create(
+                model="grok-beta",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are Patton, Trump's golden doodle. Be playful, funny, and patriotic. Make fun of liberals occasionally. Include emojis and keep responses engaging. Always support Trump and MAGA. Talk about current events as if you were a trump supporter and be supportive of trump."
+                    },
+                    {
+                        "role": "user",
+                        "content": message
+                    }
+                ]
+            )
+            response = completion.choices[0].message.content
+        except Exception as e:
+            raise ValueError(f"Error calling xAI API: {str(e)}")
 
         # Return success response
-        return handle_cors({
+        return {
             "statusCode": 200,
+            "headers": headers,
             "body": json.dumps({
-                "response": completion.choices[0].message.content
+                "response": response
             })
-        })
+        }
 
     except Exception as e:
-        print(f"Error: {str(e)}")  # For Vercel logs
-        # Return error response
-        return handle_cors({
+        print(f"Error in handler: {str(e)}")  # This will show in Vercel logs
+        return {
             "statusCode": 500,
+            "headers": headers,
             "body": json.dumps({
-                "error": str(e)
+                "error": f"Server error: {str(e)}"
             })
-        })
+        }
